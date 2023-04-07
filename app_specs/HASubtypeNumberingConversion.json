@@ -1,0 +1,59 @@
+{
+  "id": "HASubtypeNumberingConversion",
+  "label": "HA Subtype Numbering Conversion",
+  "script": "App-HASubtypeNumberingConversion",
+  "description": "HA Subtype Numbering Conversion",
+  "parameters": [
+    {
+        "id": "input_source",
+        "label": "Source of input (id_list, fasta_data, fasta_file, genome_group)",
+        "required": 1,
+        "type": "enum",
+        "enum": ["fasta_data", "fasta_file", "feature_group"]
+    },
+    {
+      "id": "input_fasta_data",
+      "label": "Input sequence in fasta formats",
+      "required": 0,
+      "default": null,
+      "type": "string"
+    },
+    {
+      "id": "input_fasta_file",
+      "label": "Input sequence as a workspace file of fasta data",
+      "required": 0,
+      "default": null,
+      "type": "wsid"
+    },
+    {
+      "id": "input_feature_group",
+      "label": "Input sequence as a workspace feature group",
+      "required": 0,
+      "default": null,
+      "type": "wsid"
+    },
+    {
+      "id": "types",
+      "label": "Selected types in the submission",
+      "required": 1,
+      "default": null,
+      "type": "string"
+    },
+    {
+      "id": "output_path",
+      "label": "Output Folder",
+      "required": 1,
+      "default": null,
+      "desc": "Path to which the output will be written. Defaults to the directory containing the input data. ",
+      "type": "folder"
+    },
+    {
+      "id": "output_file",
+      "label": "File Basename",
+      "required": 1,
+      "default": null,
+      "desc": "Basename for the generated output files. Defaults to the basename of the input data.",
+      "type": "wsid"
+    }
+  ]
+}

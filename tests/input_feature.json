@@ -1,0 +1,10 @@
+{
+    "input_source": "feature_group",
+    "output_file": "test_feature",
+    "output_path": "/mkuscuog@bvbrc/home/ha_subtype/output",
+    "types": [
+        "H3",
+        "H4"
+    ],
+    "input_feature_group": "/mkuscuog@bvbrc/home/Feature Groups/apol_virus"
+}
