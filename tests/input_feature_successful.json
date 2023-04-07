@@ -1,0 +1,11 @@
+{
+    "input_source": "feature_group",
+    "output_file": "influenza_a_feature_test",
+    "output_path": "/mkuscuog@bvbrc/home/ha_subtype/output",
+    "types": [
+        "H3",
+        "H4",
+        "H5"
+    ],
+    "input_feature_group": "/mkuscuog@bvbrc/home/Feature Groups/influenza_a_ha_test"
+}
