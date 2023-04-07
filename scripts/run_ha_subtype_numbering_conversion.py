@@ -96,27 +96,39 @@ def createFASTAFile(output_dir, job_data):
   elif job_data["input_source"] == "feature_group":
     #Retrieve fasta data from feature group
     try:
+      isAuthorized = False
       session = requests.Session();
-      tokenFile = os.path.join(os.environ.get('HOME'), ".patric_token")
-      if os.path.exists(tokenFile):
-        with open(tokenFile) as F:
-          tokenString = F.read().rstrip()
-          session.headers.update({ 'Authorization' : tokenString })
-      
-        genome_select_api = API_GENOME_FEATURE_SELECT %(urllib.quote(job_data["input_feature_group"], safe=""))
-        print("Requesting feature ids: %s" %(genome_select_api))
-        response = session.get(genome_select_api)
+      if "KB_AUTH_TOKEN" in os.environ:
+        print("Reading auth key from environment")
+        session.headers.update({ 'Authorization' : os.environ.get('KB_AUTH_TOKEN') })
+        isAuthorized = True
+      else:
+        print("Reading auth key from file")
+        tokenFile = os.path.join(os.environ.get('HOME'), ".patric_token")
+        if os.path.exists(tokenFile):
+          with open(tokenFile) as F:
+            tokenString = F.read().rstrip()
+            session.headers.update({ 'Authorization' : tokenString })
+          isAuthorized = True
 
-        feature_ids = []
-        for data in response.json():
-          feature_ids.append(data["feature_id"])
+        if isAuthorized:      
+          genome_select_api = API_GENOME_FEATURE_SELECT %(urllib.quote(job_data["input_feature_group"], safe=""))
+          print("Requesting feature ids: %s" %(genome_select_api))
+          response = session.get(genome_select_api)
 
-        genome_download_api = API_GENOME_FEATURE_DOWNLOAD %(",".join(feature_ids)) 
-        print("Requesting fasta data: %s" %(genome_download_api))
-        response = session.get(genome_download_api)
+          feature_ids = []
+          for data in response.json():
+            feature_ids.append(data["feature_id"])
 
-        with open(input_file, "w+") as input:
-          input.write(response.content)
+          genome_download_api = API_GENOME_FEATURE_DOWNLOAD %(",".join(feature_ids)) 
+          print("Requesting fasta data: %s" %(genome_download_api))
+          response = session.get(genome_download_api)
+
+          with open(input_file, "w+") as input:
+            input.write(response.content)
+        else:
+          print("Error authorizing the session for api call")
+          sys.exit(-1)
     except Exception as e:
       print("Error retrieving data from feature group:\n %s" %(e))
       sys.exit(-1)
