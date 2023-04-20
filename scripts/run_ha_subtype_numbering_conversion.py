@@ -36,7 +36,7 @@ else:
   REFERENCE_ALIGNMENT_SEQUENCE = reference_alignment_sequence_local
 
 BLAST_SEQ_ANNOTATION_NAME = "sequence_annotation.tsv"
-BLAST_SEQ_ANNOTATION_FILE_HEADER = ["QueryId", "Virus Type", "Segment", "Subtype", "Score", "Warning Messages", "Sequence Name"]
+BLAST_SEQ_ANNOTATION_FILE_HEADER = ["QueryId", "Virus Type", "Segment", "Subtype", "Bitscore", "E-value", "Warning Messages", "Sequence Name"]
 BLAST_WARNING_MESSAGE_NO_MATCH = "No Similar HA sequences were identified. Check to make sure that the query sequence provided is from an influenza HA protein."
 BLAST_WARNING_MESSAGE_NONE = "None"
 BLAST_THRESHOLD = 1e-1 
@@ -327,7 +327,8 @@ if __name__ == "__main__":
                                            "Virus Type": "N/A", 
                                            "Segment": "N/A", 
                                            "Subtype": "N/A", 
-                                           "Score": "N/A",
+                                           "Bitscore": "N/A",
+                                           "E-value": "N/A",
                                            "Warning Messages": BLAST_WARNING_MESSAGE_NO_MATCH, 
                                            "Sequence Name": sequence_name})
     else:
@@ -344,7 +345,8 @@ if __name__ == "__main__":
                                              "Virus Type": "N/A",
                                              "Segment": "N/A",
                                              "Subtype": "N/A",
-                                             "Score": "N/A",
+                                             "Bitscore": "N/A",
+                                             "E-value": "N/A",
                                              "Warning Messages": BLAST_WARNING_MESSAGE_NO_MATCH,
                                              "Sequence Name": sequence_name})
       else:
@@ -355,7 +357,8 @@ if __name__ == "__main__":
                                               "Virus Type": hitReference[0],
                                               "Segment": hitReference[1],
                                               "Subtype": hitReference[2],
-                                              "Score": bestHSP.bitscore,
+                                              "Bitscore": bestHSP.bitscore,
+                                              "E-value": bestHSP.evalue,
                                               "Warning Messages": BLAST_WARNING_MESSAGE_NONE,
                                               "Sequence Name": sequence_name})
       #print(vars(qresult))
