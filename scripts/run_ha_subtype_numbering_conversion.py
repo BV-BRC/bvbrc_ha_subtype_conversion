@@ -44,6 +44,7 @@ BLAST_THRESHOLD = 1e-1
 API_BASE_PATH = "https://www.bv-brc.org/api/"
 API_GENOME_FEATURE_SELECT = API_BASE_PATH + "genome_feature/?&select(feature_id)&sort(+feature_id)&in(feature_id,FeatureGroup(%s))" 
 API_GENOME_FEATURE_DOWNLOAD = API_BASE_PATH + "genome_feature/?&in(feature_id,(%s))&http_accept=application/protein+fasta" 
+API_GENOME_FEATURE_DOWNLOAD_LIST = API_BASE_PATH + "genome_feature/?&in(bvbrc_id,(%s))&http_accept=application/protein+fasta"
 
 HA_REFERENCE_TYPES = { 
   'H1_PR34': 'A/Puerto/Rico/8/34', 
@@ -152,8 +153,8 @@ def createFASTAFile(output_dir, job_data):
       if isAuthorized:
         feature_ids = job_data["input_feature_list"] 
 
-        genome_download_api = API_GENOME_FEATURE_DOWNLOAD %(",".join(feature_ids))
-        print("Requesting fasta data: %s" %(genome_download_api))
+        genome_download_api = API_GENOME_FEATURE_DOWNLOAD_LIST %(",".join(feature_ids))
+        print("Requesting feature list data: %s" %(genome_download_api))
         response = session.get(genome_download_api)
 
         with open(input_file, "w+") as input:
