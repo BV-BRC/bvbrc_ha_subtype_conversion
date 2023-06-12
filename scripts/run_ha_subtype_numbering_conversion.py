@@ -135,8 +135,8 @@ def createFASTAFile(output_dir, job_data):
   elif job_data["input_source"] == "feature_list":
     #Retrive fasta data from feature list
     try:
-        isAuthorized = False
-        session = requests.Session();
+      isAuthorized = False
+      session = requests.Session();
       if "KB_AUTH_TOKEN" in os.environ:
         print("Reading auth key from environment")
         session.headers.update({ 'Authorization' : os.environ.get('KB_AUTH_TOKEN') })
