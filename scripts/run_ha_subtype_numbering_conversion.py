@@ -152,12 +152,14 @@ def createFASTAFile(output_dir, job_data):
             session.headers.update({ 'Authorization' : tokenString })
           isAuthorized = True
       if isAuthorized:
-        genome_select_api = API_GENOME_FEATURE_SELECT %(urllib.quote(','.join(job_data["input_feature_list"]), safe=""))
+        genome_select_api = API_GENOME_FEATURE_SELECT %(','.join(job_data["input_feature_list"])
         print("Requesting feature ids: %s" %(genome_select_api))
         response = session.get(genome_select_api)
 
         feature_ids = []
         for data in response.json():
+          import pdb
+          pdb.set_trace()
           feature_ids.append(data["feature_id"])
         #feature_ids = job_data["input_feature_list"] 
 
