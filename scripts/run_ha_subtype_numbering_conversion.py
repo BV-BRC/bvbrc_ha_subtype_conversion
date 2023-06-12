@@ -44,7 +44,7 @@ BLAST_THRESHOLD = 1e-1
 API_BASE_PATH = "https://www.bv-brc.org/api/"
 API_GENOME_FEATURE_SELECT = API_BASE_PATH + "genome_feature/?&select(feature_id)&sort(+feature_id)&in(feature_id,FeatureGroup(%s))" 
 API_GENOME_FEATURE_DOWNLOAD = API_BASE_PATH + "genome_feature/?&in(feature_id,(%s))&http_accept=application/protein+fasta" 
-API_GENOME_FEATURE_DOWNLOAD_LIST = API_BASE_PATH + "genome_feature/?&in(bvbrc_id,(%s))&http_accept=application/protein+fasta"
+API_GENOME_FEATURE_DOWNLOAD_LIST = API_BASE_PATH + "genome_feature/?&in(patric_id,(%s))&http_accept=application/protein+fasta"
 
 HA_REFERENCE_TYPES = { 
   'H1_PR34': 'A/Puerto/Rico/8/34', 
@@ -169,9 +169,7 @@ def createFASTAFile(output_dir, job_data):
   return input_file
 
 def parseFASTAFile(fasta_data):
-  import pdb
   for line in fasta_data:
-    pdb.set_trace()
     if line[0] == ">":
       header = line[1:].rstrip()
       break
