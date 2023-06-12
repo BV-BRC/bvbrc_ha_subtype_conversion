@@ -45,7 +45,6 @@ API_BASE_PATH = "https://www.bv-brc.org/api/"
 API_GENOME_FEATURE_SELECT = API_BASE_PATH + "genome_feature/?&select(feature_id)&sort(+feature_id)&in(feature_id,FeatureGroup(%s))" 
 API_GENOME_FEATURE_SELECT_LIST = API_BASE_PATH + "genome_feature/?&select(feature_id)&sort(+feature_id)&in(patric_id,(%s))" 
 API_GENOME_FEATURE_DOWNLOAD = API_BASE_PATH + "genome_feature/?&in(feature_id,(%s))&http_accept=application/protein+fasta" 
-API_GENOME_FEATURE_DOWNLOAD_LIST = API_BASE_PATH + "genome_feature/?&in(feature_id,(%s))&http_accept=application/protein+fasta"
 
 HA_REFERENCE_TYPES = { 
   'H1_PR34': 'A/Puerto/Rico/8/34', 
@@ -158,12 +157,10 @@ def createFASTAFile(output_dir, job_data):
 
         feature_ids = []
         for data in response.json():
-          import pdb
-          pdb.set_trace()
           feature_ids.append(data["feature_id"])
         #feature_ids = job_data["input_feature_list"] 
 
-        genome_download_api = API_GENOME_FEATURE_DOWNLOAD_LIST %(",".join(feature_ids))
+        genome_download_api = API_GENOME_FEATURE_DOWNLOAD %(",".join(feature_ids))
         print("Requesting feature list data: %s" %(genome_download_api))
         response = session.get(genome_download_api)
 
