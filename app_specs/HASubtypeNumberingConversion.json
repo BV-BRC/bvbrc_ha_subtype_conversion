@@ -6,10 +6,10 @@
   "parameters": [
     {
         "id": "input_source",
-        "label": "Source of input (id_list, fasta_data, fasta_file, genome_group)",
+        "label": "Source of input (feature_list, fasta_data, fasta_file, genome_group)",
         "required": 1,
         "type": "enum",
-        "enum": ["fasta_data", "fasta_file", "feature_group"]
+        "enum": ["feature_list","fasta_data", "fasta_file", "feature_group"]
     },
     {
       "id": "input_fasta_data",
@@ -31,6 +31,13 @@
       "required": 0,
       "default": null,
       "type": "wsid"
+    },
+    {
+        "id": "input_feature_list",
+        "label": "Input sequence as a list of feature ids",
+        "required": 0,
+        "default": null,
+        "type": "string"
     },
     {
       "id": "types",
