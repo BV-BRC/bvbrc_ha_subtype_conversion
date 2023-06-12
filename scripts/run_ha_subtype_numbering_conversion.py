@@ -43,6 +43,7 @@ BLAST_THRESHOLD = 1e-1
 
 API_BASE_PATH = "https://www.bv-brc.org/api/"
 API_GENOME_FEATURE_SELECT = API_BASE_PATH + "genome_feature/?&select(feature_id)&sort(+feature_id)&in(feature_id,FeatureGroup(%s))" 
+API_GENOME_FEATURE_SELECT_LIST = API_BASE_PATH + "genome_feature/?&select(feature_id)&sort(+feature_id)&in(patric_id,(%s))" 
 API_GENOME_FEATURE_DOWNLOAD = API_BASE_PATH + "genome_feature/?&in(feature_id,(%s))&http_accept=application/protein+fasta" 
 
 HA_REFERENCE_TYPES = { 
@@ -122,6 +123,45 @@ def createFASTAFile(output_dir, job_data):
 
         genome_download_api = API_GENOME_FEATURE_DOWNLOAD %(",".join(feature_ids)) 
         print("Requesting fasta data: %s" %(genome_download_api))
+        response = session.get(genome_download_api)
+
+        with open(input_file, "w+") as input:
+          input.write(response.content)
+      else:
+        print("Error authorizing the session for api call")
+        sys.exit(-1)
+    except Exception as e:
+      print("Error retrieving data from feature group:\n %s" %(e))
+      sys.exit(-1)
+  elif job_data["input_source"] == "feature_list":
+    #Retrive fasta data from feature list
+    try:
+      isAuthorized = False
+      session = requests.Session();
+      if "KB_AUTH_TOKEN" in os.environ:
+        print("Reading auth key from environment")
+        session.headers.update({ 'Authorization' : os.environ.get('KB_AUTH_TOKEN') })
+        isAuthorized = True
+      else:
+        print("Reading auth key from file")
+        tokenFile = os.path.join(os.environ.get('HOME'), ".patric_token")
+        if os.path.exists(tokenFile):
+          with open(tokenFile) as F:
+            tokenString = F.read().rstrip()
+            session.headers.update({ 'Authorization' : tokenString })
+          isAuthorized = True
+      if isAuthorized:
+        genome_select_api = API_GENOME_FEATURE_SELECT_LIST %(','.join(job_data["input_feature_list"]))
+        print("Requesting feature ids: %s" %(genome_select_api))
+        response = session.get(genome_select_api)
+
+        feature_ids = []
+        for data in response.json():
+          feature_ids.append(data["feature_id"])
+        #feature_ids = job_data["input_feature_list"] 
+
+        genome_download_api = API_GENOME_FEATURE_DOWNLOAD %(",".join(feature_ids))
+        print("Requesting feature list data: %s" %(genome_download_api))
         response = session.get(genome_download_api)
 
         with open(input_file, "w+") as input:
