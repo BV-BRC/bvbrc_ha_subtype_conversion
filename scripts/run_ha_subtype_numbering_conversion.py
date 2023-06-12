@@ -169,6 +169,8 @@ def createFASTAFile(output_dir, job_data):
   return input_file
 
 def parseFASTAFile(fasta_data):
+  import pdb
+  pdb.set_trace()
   for line in fasta_data:
     if line[0] == ">":
       header = line[1:].rstrip()
