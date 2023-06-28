@@ -410,7 +410,7 @@ if __name__ == "__main__":
   for query_name, value in sequences.items(): 
     if "subtype" not in value:
       print("No subtype found from BLAST: %s" %(query_name))
-      break
+      continue
 
     blast_subtype = value["subtype"]
 
