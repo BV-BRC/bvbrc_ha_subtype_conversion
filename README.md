@@ -13,7 +13,7 @@ the components of the BV-BRC. More documentation is available [here](https://git
 There is one application service specification defined here:
 1. [HA Subtype Numbering Conversion](app_specs/HASubtypeNumberingConversion.md): The HA Subtype Numbering Conversion service allows user to renumber Influenza HA sequences according to a cross-subtype numbering scheme proposed by Burke and Smith in [Burke DF, Smith DJ.2014. A recommended numbering scheme for influenza A HA subtypes. PLoS One 9:e112302.](https://pubmed.ncbi.nlm.nih.gov/25391151/)
 
-The code in this module provides the BV-BRC application service wrapper scripts for the genome annotation service as well
+The code in this module provides the BV-BRC application service wrapper scripts for the HA Subtype Numbering Conversion service as well
 as some backend utilities:
 
 | Script name | Purpose |
