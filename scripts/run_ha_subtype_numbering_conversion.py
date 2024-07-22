@@ -343,7 +343,7 @@ if __name__ == "__main__":
   blast_output_file = os.path.join(output_dir, "blast.out")
   #Run BLAST
   try:
-    blast_cmd = ["blastall", "-d", REFERENCE_SEQUENCE, "-i", blast_input_file, "-p", "blastp", "-G", "10", "-E", "1", "-o", blast_output_file]
+    blast_cmd = ["blastall", "-d", REFERENCE_SEQUENCE, "-i", blast_input_file, "-p", "blastp", "-G", "10", "-E", "1", "-m", "7", "-o", blast_output_file]
     subprocess.check_call(blast_cmd, shell=False)
   except Exception as e:
     print("Error running blast for %s" %(input_file))
