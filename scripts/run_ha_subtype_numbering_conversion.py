@@ -7,7 +7,7 @@ import os
 import requests
 import subprocess
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from Bio import SearchIO
 
 #
@@ -113,8 +113,8 @@ def createFASTAFile(output_dir, job_data):
           isAuthorized = True
 
       if isAuthorized:      
-        genome_select_api = API_GENOME_FEATURE_SELECT %(urllib.quote(job_data["input_feature_group"], safe=""))
-        print("Requesting feature ids: %s" %(genome_select_api))
+        genome_select_api = API_GENOME_FEATURE_SELECT %(urllib.parse.quote(job_data["input_feature_group"], safe=""))
+        print(("Requesting feature ids: %s" %(genome_select_api)))
         response = session.get(genome_select_api)
 
         feature_ids = []
@@ -229,7 +229,7 @@ def getInsertionIndices(final_sequence, sequence):
   insertion_position_map = getInsertionPositionForGaps(sequence)
 
   clean_final_seq_len = len(final_sequence.replace("-", ""))
-  for position, gap_count in insertion_position_map.items():
+  for position, gap_count in list(insertion_position_map.items()):
     if position == 0:
       for idx in range(gap_count):
         insertion_indices.append(idx)    
@@ -407,9 +407,9 @@ if __name__ == "__main__":
   #Close sequence annotation file
   sequence_annotation_file.close()
 
-  for query_name, value in sequences.items(): 
+  for query_name, value in list(sequences.items()): 
     if "subtype" not in value:
-      print("No subtype found from BLAST: %s" %(query_name))
+      print(("No subtype found from BLAST: %s" %(query_name)))
       continue
 
     blast_subtype = value["subtype"]
@@ -464,7 +464,7 @@ if __name__ == "__main__":
       #Create final aligned reference sequence
       final_aligned_ref_seq = reference_sequences[blast_subtype]
       insertion_position_map = getInsertionPositionForGaps(aligned_reference_sequence)
-      for position, gap_count in insertion_position_map.items():
+      for position, gap_count in list(insertion_position_map.items()):
         gap_str = "".join("-" for _ in range(gap_count)) 
         if position == 0:
           final_aligned_ref_seq = gap_str + final_aligned_ref_seq[0:]
