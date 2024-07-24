@@ -126,7 +126,7 @@ def createFASTAFile(output_dir, job_data):
         response = session.get(genome_download_api)
 
         with open(input_file, "w+") as input:
-          input.write(response.content)
+          input.write(response.text)
       else:
         print("Error authorizing the session for api call")
         sys.exit(-1)
@@ -165,7 +165,7 @@ def createFASTAFile(output_dir, job_data):
         response = session.get(genome_download_api)
 
         with open(input_file, "w+") as input:
-          input.write(response.content)
+          input.write(response.text)
       else:
         print("Error authorizing the session for api call")
         sys.exit(-1)
