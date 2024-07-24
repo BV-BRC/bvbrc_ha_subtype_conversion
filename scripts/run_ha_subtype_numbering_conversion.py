@@ -350,7 +350,7 @@ if __name__ == "__main__":
     sys.exit(-1)
   
   #Parse blast result and create sequence annotation file
-  qresults = SearchIO.parse(blast_output_file, "blast-text")
+  qresults = SearchIO.parse(blast_output_file, "blast-xml")
   
   sequence_annotation_file_path = os.path.join(output_dir, BLAST_SEQ_ANNOTATION_NAME)
   sequence_annotation_file = open(sequence_annotation_file_path, "w")
