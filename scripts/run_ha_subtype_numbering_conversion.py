@@ -13,7 +13,7 @@ from Bio import SearchIO
 #
 # Determine paths.
 #
-top = os.getenv("KB_TOP")
+top = os.getenv("KB_TOP") or ""
 
 reference_sequence_deployed = os.path.join(top, "lib", "Burke_HA_Reference_Sequences.fasta")
 reference_sequence_dev = os.path.join(top, "modules", "bvbrc_ha_subtype_conversion", "lib", "Burke_HA_Reference_Sequences.fasta")
@@ -90,8 +90,8 @@ def createFASTAFile(output_dir, job_data):
     elif job_data["input_source"] == "fasta_data":
         # Copy user data to input file
         try:
-            with open(input_file, "w+") as input:
-                input.write(job_data["input_fasta_data"])
+            with open(input_file, "w+") as f:
+                f.write(job_data["input_fasta_data"])
         except Exception as e:
             print("Error copying fasta data to input file:\n %s" % (e))
             sys.exit(-1)
@@ -127,8 +127,8 @@ def createFASTAFile(output_dir, job_data):
                 print("Requesting fasta data: %s" % (genome_download_api))
                 response = session.get(genome_download_api)
 
-                with open(input_file, "w+") as input:
-                    input.write(response.text)
+                with open(input_file, "w+") as f:
+                    f.write(response.text)
             else:
                 print("Error authorizing the session for api call")
                 sys.exit(-1)
@@ -166,8 +166,8 @@ def createFASTAFile(output_dir, job_data):
                 print("Requesting feature list data: %s" % (genome_download_api))
                 response = session.get(genome_download_api)
 
-                with open(input_file, "w+") as input:
-                    input.write(response.text)
+                with open(input_file, "w+") as f:
+                    f.write(response.text)
             else:
                 print("Error authorizing the session for api call")
                 sys.exit(-1)
@@ -203,7 +203,7 @@ def getInsertionPositionForGaps(sequence):
 
     aa_counter = 0
     gap_counter = 0
-    for ch in aligned_reference_sequence:
+    for ch in sequence:
         if ch == '-':
             gap_counter = gap_counter + 1
         else:
@@ -364,35 +364,17 @@ if __name__ == "__main__":
     qresults = SearchIO.parse(blast_output_file, "blast-xml")
 
     sequence_annotation_file_path = os.path.join(output_dir, BLAST_SEQ_ANNOTATION_NAME)
-    sequence_annotation_file = open(sequence_annotation_file_path, "w")
-    sequence_annotation_writer = csv.DictWriter(sequence_annotation_file, delimiter="\t",
-                                                fieldnames=BLAST_SEQ_ANNOTATION_FILE_HEADER)
-    sequence_annotation_writer.writeheader()
+    with open(sequence_annotation_file_path, "w") as sequence_annotation_file:
+        sequence_annotation_writer = csv.DictWriter(sequence_annotation_file, delimiter="\t",
+                                                    fieldnames=BLAST_SEQ_ANNOTATION_FILE_HEADER)
+        sequence_annotation_writer.writeheader()
 
-    for qresult in qresults:
-        print("Search %s has %i hits" % (qresult.id, len(qresult)))
+        for qresult in qresults:
+            print("Search %s has %i hits" % (qresult.id, len(qresult)))
 
-        query_id = qresult.id
-        sequence_name = sequences[query_id]["header"]
-        if len(qresult) == 0:
-            sequence_annotation_writer.writerow({"QueryId": query_id,
-                                                 "Virus Type": "N/A",
-                                                 "Segment": "N/A",
-                                                 "Subtype": "N/A",
-                                                 "Bitscore": "N/A",
-                                                 "E-value": "N/A",
-                                                 "Warning Messages": BLAST_WARNING_MESSAGE_NO_MATCH,
-                                                 "Sequence Name": sequence_name})
-        else:
-            bestEvalue = BLAST_THRESHOLD
-            bestHSP = None
-            for hit in qresult:
-                for hsp in hit:
-                    if hsp.evalue < bestEvalue:
-                        bestEvalue = hsp.evalue
-                        bestHSP = hsp
-
-            if bestHSP is None:
+            query_id = qresult.id
+            sequence_name = sequences[query_id]["header"]
+            if len(qresult) == 0:
                 sequence_annotation_writer.writerow({"QueryId": query_id,
                                                      "Virus Type": "N/A",
                                                      "Segment": "N/A",
@@ -402,22 +384,35 @@ if __name__ == "__main__":
                                                      "Warning Messages": BLAST_WARNING_MESSAGE_NO_MATCH,
                                                      "Sequence Name": sequence_name})
             else:
-                hitReference = bestHSP.hit_id.strip().split("|")
-                # Add hit result to sequence map
-                sequences[query_id]["subtype"] = hitReference[2]
-                sequence_annotation_writer.writerow({"QueryId": query_id,
-                                                     "Virus Type": hitReference[0],
-                                                     "Segment": hitReference[1],
-                                                     "Subtype": hitReference[2],
-                                                     "Bitscore": bestHSP.bitscore,
-                                                     "E-value": bestHSP.evalue,
-                                                     "Warning Messages": BLAST_WARNING_MESSAGE_NONE,
-                                                     "Sequence Name": sequence_name})
-            # print(vars(qresult))
-            # print(qresult.description)
+                bestEvalue = BLAST_THRESHOLD
+                bestHSP = None
+                for hit in qresult:
+                    for hsp in hit:
+                        if hsp.evalue < bestEvalue:
+                            bestEvalue = hsp.evalue
+                            bestHSP = hsp
 
-    # Close sequence annotation file
-    sequence_annotation_file.close()
+                if bestHSP is None:
+                    sequence_annotation_writer.writerow({"QueryId": query_id,
+                                                         "Virus Type": "N/A",
+                                                         "Segment": "N/A",
+                                                         "Subtype": "N/A",
+                                                         "Bitscore": "N/A",
+                                                         "E-value": "N/A",
+                                                         "Warning Messages": BLAST_WARNING_MESSAGE_NO_MATCH,
+                                                         "Sequence Name": sequence_name})
+                else:
+                    hitReference = bestHSP.hit_id.strip().split("|")
+                    # Add hit result to sequence map
+                    sequences[query_id]["subtype"] = hitReference[2]
+                    sequence_annotation_writer.writerow({"QueryId": query_id,
+                                                         "Virus Type": hitReference[0],
+                                                         "Segment": hitReference[1],
+                                                         "Subtype": hitReference[2],
+                                                         "Bitscore": bestHSP.bitscore,
+                                                         "E-value": bestHSP.evalue,
+                                                         "Warning Messages": BLAST_WARNING_MESSAGE_NONE,
+                                                         "Sequence Name": sequence_name})
 
     for query_name, value in list(sequences.items()):
         if "subtype" not in value:
@@ -459,72 +454,66 @@ if __name__ == "__main__":
 
         # Combine subtypes from user selection and subtype from blast result
         selected_subtypes = []
-        for type in list(selected_types):
-            if type != blast_subtype:
-                selected_subtypes.append(type)
+        for selected_type in list(selected_types):
+            if selected_type != blast_subtype:
+                selected_subtypes.append(selected_type)
 
         # Final result file
         result_file = os.path.join(output_dir, query_name + "_result.fasta")
-        result_file_writer = open(result_file, "w")
+        with open(result_file, "w") as result_file_writer:
+            # Write query and best hit sequences to the final result file
+            muscle_output_sequence = muscle_sequence[query_name].strip()
+            aligned_reference_sequence = muscle_sequence[blast_subtype].strip()
 
-        # Write query and best hit sequences to the final result file
-        muscle_output_sequence = muscle_sequence[query_name].strip()
-        aligned_reference_sequence = muscle_sequence[blast_subtype].strip()
-
-        if "-" in aligned_reference_sequence:
-            print("Dash exists in the aligned reference sequence")
-            # Create final aligned reference sequence
-            final_aligned_ref_seq = reference_sequences[blast_subtype]
-            insertion_position_map = getInsertionPositionForGaps(aligned_reference_sequence)
-            for position, gap_count in list(insertion_position_map.items()):
-                gap_str = "".join("-" for _ in range(gap_count))
-                if position == 0:
-                    final_aligned_ref_seq = gap_str + final_aligned_ref_seq[0:]
-                else:
-                    aligned_position_map = getPositionForAlignedCoordinates(final_aligned_ref_seq)
-                    aligned_position = aligned_position_map[position] + 1
-                    final_aligned_ref_seq = final_aligned_ref_seq[:aligned_position] + gap_str + final_aligned_ref_seq[
-                        aligned_position:]
-
-            # insertionIndices = [i for i, ltr in enumerate(aligned_reference_sequence) if ltr == "-"]
-            # insertion_indices = getInsertionIndices(final_aligned_ref_seq, reference_sequences[blast_subtype])
-            insertion_indices = getInsertionIndices(final_aligned_ref_seq, aligned_reference_sequence)
-
-            final_aligned_query = getFinalAlignedQuery(muscle_output_sequence, aligned_reference_sequence,
-                                                       final_aligned_ref_seq, insertion_indices)
-            result_file_writer.write(">" + query_name + "\n")
-            result_file_writer.write(final_aligned_query + "\n")
-            result_file_writer.write(">" + blast_subtype + "\n")
-            result_file_writer.write(final_aligned_ref_seq + "\n")
-
-            # Create aligned reference sequence with insertions for each subtype
-            for subtype in selected_subtypes:
-                subtype_ref_sequence = reference_sequences[subtype]
-                aligned_ref_seq_with_insertions = []
-
-                counter = 0
-                for idx in range(len(final_aligned_ref_seq)):
-                    if idx in insertion_indices:
-                        aligned_ref_seq_with_insertions.append("-")
+            if "-" in aligned_reference_sequence:
+                print("Dash exists in the aligned reference sequence")
+                # Create final aligned reference sequence
+                final_aligned_ref_seq = reference_sequences[blast_subtype]
+                insertion_position_map = getInsertionPositionForGaps(aligned_reference_sequence)
+                for position, gap_count in list(insertion_position_map.items()):
+                    gap_str = "".join("-" for _ in range(gap_count))
+                    if position == 0:
+                        final_aligned_ref_seq = gap_str + final_aligned_ref_seq[0:]
                     else:
-                        aligned_ref_seq_with_insertions.append(subtype_ref_sequence[counter])
-                        counter = counter + 1
+                        aligned_position_map = getPositionForAlignedCoordinates(final_aligned_ref_seq)
+                        aligned_position = aligned_position_map[position] + 1
+                        final_aligned_ref_seq = final_aligned_ref_seq[:aligned_position] + gap_str + final_aligned_ref_seq[
+                            aligned_position:]
 
-                result_file_writer.write(">" + subtype + "\n")
-                result_file_writer.write("".join(aligned_ref_seq_with_insertions) + "\n")
-        else:
-            print("Dash does not exist in the aligned reference sequence")
+                insertion_indices = getInsertionIndices(final_aligned_ref_seq, aligned_reference_sequence)
 
-            final_aligned_query = getFinalAlignedQuery(muscle_output_sequence, aligned_reference_sequence,
-                                                       reference_sequences[blast_subtype])
-            result_file_writer.write(">" + query_name + "\n")
-            result_file_writer.write(final_aligned_query + "\n")
-            result_file_writer.write(">" + blast_subtype + "\n")
-            result_file_writer.write(reference_sequences[blast_subtype] + "\n")
+                final_aligned_query = getFinalAlignedQuery(muscle_output_sequence, aligned_reference_sequence,
+                                                           final_aligned_ref_seq, insertion_indices)
+                result_file_writer.write(">" + query_name + "\n")
+                result_file_writer.write(final_aligned_query + "\n")
+                result_file_writer.write(">" + blast_subtype + "\n")
+                result_file_writer.write(final_aligned_ref_seq + "\n")
 
-            for subtype in selected_subtypes:
-                result_file_writer.write(">" + subtype + "\n")
-                result_file_writer.write(reference_sequences[subtype] + "\n")
+                # Create aligned reference sequence with insertions for each subtype
+                for subtype in selected_subtypes:
+                    subtype_ref_sequence = reference_sequences[subtype]
+                    aligned_ref_seq_with_insertions = []
 
-        # Close result file
-        result_file_writer.close()
+                    counter = 0
+                    for idx in range(len(final_aligned_ref_seq)):
+                        if idx in insertion_indices:
+                            aligned_ref_seq_with_insertions.append("-")
+                        else:
+                            aligned_ref_seq_with_insertions.append(subtype_ref_sequence[counter])
+                            counter = counter + 1
+
+                    result_file_writer.write(">" + subtype + "\n")
+                    result_file_writer.write("".join(aligned_ref_seq_with_insertions) + "\n")
+            else:
+                print("Dash does not exist in the aligned reference sequence")
+
+                final_aligned_query = getFinalAlignedQuery(muscle_output_sequence, aligned_reference_sequence,
+                                                           reference_sequences[blast_subtype])
+                result_file_writer.write(">" + query_name + "\n")
+                result_file_writer.write(final_aligned_query + "\n")
+                result_file_writer.write(">" + blast_subtype + "\n")
+                result_file_writer.write(reference_sequences[blast_subtype] + "\n")
+
+                for subtype in selected_subtypes:
+                    result_file_writer.write(">" + subtype + "\n")
+                    result_file_writer.write(reference_sequences[subtype] + "\n")
