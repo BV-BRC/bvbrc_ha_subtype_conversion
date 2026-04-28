@@ -347,7 +347,7 @@ if __name__ == "__main__":
     reference_sequences = {}
     with open(REFERENCE_ALIGNMENT_SEQUENCE) as fasta_data:
         for values in parseFASTAFile(fasta_data):
-            subtype = values["header"].split("|")[2]
+            subtype = values["header"].split("|")[2].split()[0]
             reference_sequences[subtype] = values["data"]
 
     blast_output_file = os.path.join(output_dir, "blast.out")
