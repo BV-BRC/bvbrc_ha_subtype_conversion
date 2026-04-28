@@ -77,7 +77,7 @@ HA_REFERENCE_TYPES = {
 }
 
 
-def createFASTAFile(output_dir, job_data):
+def create_fasta_file(output_dir, job_data):
     input_file = os.path.join(output_dir, "input.fasta")
     if job_data["input_source"] == "fasta_file":
         # Fetch input file from workspace
@@ -98,22 +98,22 @@ def createFASTAFile(output_dir, job_data):
     elif job_data["input_source"] == "feature_group":
         # Retrieve fasta data from feature group
         try:
-            isAuthorized = False
+            is_authorized = False
             session = requests.Session();
             if "KB_AUTH_TOKEN" in os.environ:
                 print("Reading auth key from environment")
                 session.headers.update({'Authorization': os.environ.get('KB_AUTH_TOKEN')})
-                isAuthorized = True
+                is_authorized = True
             else:
                 print("Reading auth key from file")
-                tokenFile = os.path.join(os.environ.get('HOME'), ".patric_token")
-                if os.path.exists(tokenFile):
-                    with open(tokenFile) as F:
-                        tokenString = F.read().rstrip()
-                        session.headers.update({'Authorization': tokenString})
-                    isAuthorized = True
+                token_file = os.path.join(os.environ.get('HOME'), ".patric_token")
+                if os.path.exists(token_file):
+                    with open(token_file) as token_fh:
+                        token_string = token_fh.read().rstrip()
+                        session.headers.update({'Authorization': token_string})
+                    is_authorized = True
 
-            if isAuthorized:
+            if is_authorized:
                 genome_select_api = API_GENOME_FEATURE_SELECT % (
                     urllib.parse.quote(job_data["input_feature_group"], safe=""))
                 print(("Requesting feature ids: %s" % (genome_select_api)))
@@ -138,21 +138,21 @@ def createFASTAFile(output_dir, job_data):
     elif job_data["input_source"] == "feature_list":
         # Retrive fasta data from feature list
         try:
-            isAuthorized = False
+            is_authorized = False
             session = requests.Session();
             if "KB_AUTH_TOKEN" in os.environ:
                 print("Reading auth key from environment")
                 session.headers.update({'Authorization': os.environ.get('KB_AUTH_TOKEN')})
-                isAuthorized = True
+                is_authorized = True
             else:
                 print("Reading auth key from file")
-                tokenFile = os.path.join(os.environ.get('HOME'), ".patric_token")
-                if os.path.exists(tokenFile):
-                    with open(tokenFile) as F:
-                        tokenString = F.read().rstrip()
-                        session.headers.update({'Authorization': tokenString})
-                    isAuthorized = True
-            if isAuthorized:
+                token_file = os.path.join(os.environ.get('HOME'), ".patric_token")
+                if os.path.exists(token_file):
+                    with open(token_file) as token_fh:
+                        token_string = token_fh.read().rstrip()
+                        session.headers.update({'Authorization': token_string})
+                    is_authorized = True
+            if is_authorized:
                 genome_select_api = API_GENOME_FEATURE_SELECT_LIST % (','.join(job_data["input_feature_list"]))
                 print("Requesting feature ids: %s" % (genome_select_api))
                 response = session.get(genome_select_api)
@@ -178,7 +178,7 @@ def createFASTAFile(output_dir, job_data):
     return input_file
 
 
-def parseFASTAFile(fasta_data):
+def parse_fasta_file(fasta_data):
     for line in fasta_data:
         if line[0] == ">":
             header = line[1:].rstrip()
@@ -198,7 +198,7 @@ def parseFASTAFile(fasta_data):
 
 # Generate gap counts after residues
 # Example: 3->2 means there are 2 gaps (-) starting from position 3 in the sequence
-def getInsertionPositionForGaps(sequence):
+def get_insertion_position_for_gaps(sequence):
     insertion_position_map = {}
 
     aa_counter = 0
@@ -217,7 +217,7 @@ def getInsertionPositionForGaps(sequence):
     return insertion_position_map
 
 
-def getPositionForAlignedCoordinates(sequence):
+def get_position_for_aligned_coordinates(sequence):
     aligned_position_map = {}
 
     counter = 1
@@ -229,10 +229,10 @@ def getPositionForAlignedCoordinates(sequence):
     return aligned_position_map
 
 
-def getInsertionIndices(final_sequence, sequence):
+def get_insertion_indices(final_sequence, sequence):
     insertion_indices = []
-    aligned_position_map = getPositionForAlignedCoordinates(final_sequence)
-    insertion_position_map = getInsertionPositionForGaps(sequence)
+    aligned_position_map = get_position_for_aligned_coordinates(final_sequence)
+    insertion_position_map = get_insertion_position_for_gaps(sequence)
 
     clean_final_seq_len = len(final_sequence.replace("-", ""))
     for position, gap_count in list(insertion_position_map.items()):
@@ -247,7 +247,7 @@ def getInsertionIndices(final_sequence, sequence):
     return insertion_indices
 
 
-def getReferenceResidueMap(aligned_query, aligned_reference):
+def get_reference_residue_map(aligned_query, aligned_reference):
     reference_residue_map = {}
 
     reference_position = 1
@@ -259,10 +259,10 @@ def getReferenceResidueMap(aligned_query, aligned_reference):
     return reference_residue_map
 
 
-def getFinalAlignedQuery(aligned_query, aligned_reference, final_or_pre_aligned_reference, insertion_indices=None):
+def get_final_aligned_query(aligned_query, aligned_reference, final_or_pre_aligned_reference, insertion_indices=None):
     final_aligned_query = []
 
-    reference_residue_map = getReferenceResidueMap(aligned_query, aligned_reference)
+    reference_residue_map = get_reference_residue_map(aligned_query, aligned_reference)
 
     for _ in range(len(final_or_pre_aligned_reference)):
         final_aligned_query.append("-")
@@ -320,7 +320,7 @@ if __name__ == "__main__":
     selected_types = job_data["types"]
 
     # Create input file
-    input_file = createFASTAFile(output_dir, job_data)
+    input_file = create_fasta_file(output_dir, job_data)
 
     if os.path.getsize(input_file) == 0:
         print("Input fasta file is empty")
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     sequences = {}
     with open(blast_input_file, "w") as blast_data:
         with open(input_file) as fasta_data:
-            for values in parseFASTAFile(fasta_data):
+            for values in parse_fasta_file(fasta_data):
                 query_name = "query" + str(index)
                 sequences[query_name] = values
 
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     # Parse reference sequences
     reference_sequences = {}
     with open(REFERENCE_ALIGNMENT_SEQUENCE) as fasta_data:
-        for values in parseFASTAFile(fasta_data):
+        for values in parse_fasta_file(fasta_data):
             subtype = values["header"].split("|")[2].split()[0]
             reference_sequences[subtype] = values["data"]
 
@@ -384,15 +384,15 @@ if __name__ == "__main__":
                                                      "Warning Messages": BLAST_WARNING_MESSAGE_NO_MATCH,
                                                      "Sequence Name": sequence_name})
             else:
-                bestEvalue = BLAST_THRESHOLD
-                bestHSP = None
+                best_evalue = BLAST_THRESHOLD
+                best_hsp = None
                 for hit in qresult:
                     for hsp in hit:
-                        if hsp.evalue < bestEvalue:
-                            bestEvalue = hsp.evalue
-                            bestHSP = hsp
+                        if hsp.evalue < best_evalue:
+                            best_evalue = hsp.evalue
+                            best_hsp = hsp
 
-                if bestHSP is None:
+                if best_hsp is None:
                     sequence_annotation_writer.writerow({"QueryId": query_id,
                                                          "Virus Type": "N/A",
                                                          "Segment": "N/A",
@@ -402,15 +402,15 @@ if __name__ == "__main__":
                                                          "Warning Messages": BLAST_WARNING_MESSAGE_NO_MATCH,
                                                          "Sequence Name": sequence_name})
                 else:
-                    hitReference = bestHSP.hit_id.strip().split("|")
+                    hit_reference = best_hsp.hit_id.strip().split("|")
                     # Add hit result to sequence map
-                    sequences[query_id]["subtype"] = hitReference[2]
+                    sequences[query_id]["subtype"] = hit_reference[2]
                     sequence_annotation_writer.writerow({"QueryId": query_id,
-                                                         "Virus Type": hitReference[0],
-                                                         "Segment": hitReference[1],
-                                                         "Subtype": hitReference[2],
-                                                         "Bitscore": bestHSP.bitscore,
-                                                         "E-value": bestHSP.evalue,
+                                                         "Virus Type": hit_reference[0],
+                                                         "Segment": hit_reference[1],
+                                                         "Subtype": hit_reference[2],
+                                                         "Bitscore": best_hsp.bitscore,
+                                                         "E-value": best_hsp.evalue,
                                                          "Warning Messages": BLAST_WARNING_MESSAGE_NONE,
                                                          "Sequence Name": sequence_name})
 
@@ -449,7 +449,7 @@ if __name__ == "__main__":
 
         muscle_sequence = {}
         with open(muscle_output_file) as muscle_data:
-            for values in parseFASTAFile(muscle_data):
+            for values in parse_fasta_file(muscle_data):
                 muscle_sequence[values["header"]] = values["data"]
 
         # Combine subtypes from user selection and subtype from blast result
@@ -469,20 +469,20 @@ if __name__ == "__main__":
                 print("Dash exists in the aligned reference sequence")
                 # Create final aligned reference sequence
                 final_aligned_ref_seq = reference_sequences[blast_subtype]
-                insertion_position_map = getInsertionPositionForGaps(aligned_reference_sequence)
+                insertion_position_map = get_insertion_position_for_gaps(aligned_reference_sequence)
                 for position, gap_count in list(insertion_position_map.items()):
                     gap_str = "".join("-" for _ in range(gap_count))
                     if position == 0:
                         final_aligned_ref_seq = gap_str + final_aligned_ref_seq[0:]
                     else:
-                        aligned_position_map = getPositionForAlignedCoordinates(final_aligned_ref_seq)
+                        aligned_position_map = get_position_for_aligned_coordinates(final_aligned_ref_seq)
                         aligned_position = aligned_position_map[position] + 1
                         final_aligned_ref_seq = final_aligned_ref_seq[:aligned_position] + gap_str + final_aligned_ref_seq[
                             aligned_position:]
 
-                insertion_indices = getInsertionIndices(final_aligned_ref_seq, aligned_reference_sequence)
+                insertion_indices = get_insertion_indices(final_aligned_ref_seq, aligned_reference_sequence)
 
-                final_aligned_query = getFinalAlignedQuery(muscle_output_sequence, aligned_reference_sequence,
+                final_aligned_query = get_final_aligned_query(muscle_output_sequence, aligned_reference_sequence,
                                                            final_aligned_ref_seq, insertion_indices)
                 result_file_writer.write(">" + query_name + "\n")
                 result_file_writer.write(final_aligned_query + "\n")
@@ -507,7 +507,7 @@ if __name__ == "__main__":
             else:
                 print("Dash does not exist in the aligned reference sequence")
 
-                final_aligned_query = getFinalAlignedQuery(muscle_output_sequence, aligned_reference_sequence,
+                final_aligned_query = get_final_aligned_query(muscle_output_sequence, aligned_reference_sequence,
                                                            reference_sequences[blast_subtype])
                 result_file_writer.write(">" + query_name + "\n")
                 result_file_writer.write(final_aligned_query + "\n")
