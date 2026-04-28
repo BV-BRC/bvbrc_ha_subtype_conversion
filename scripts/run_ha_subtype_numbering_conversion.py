@@ -8,20 +8,21 @@ import requests
 import subprocess
 import sys
 import urllib.parse
+from pathlib import Path
 from Bio import SearchIO
 
 
 def resolve_reference_path(filename):
-    top = os.getenv("KB_TOP") or ""
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    top = Path(os.getenv("KB_TOP") or "")
+    script_dir = Path(__file__).resolve().parent
     candidates = [
-        os.path.join(top, "lib", filename),
-        os.path.join(top, "modules", "bvbrc_ha_subtype_conversion", "lib", filename),
-        os.path.join(script_dir, "..", "lib", filename),
-        os.path.join("/home", "ac.mkuscuog", "git", "bvbrc_ha_subtype_conversion", "lib", filename),
+        top / "lib" / filename,
+        top / "modules" / "bvbrc_ha_subtype_conversion" / "lib" / filename,
+        script_dir / ".." / "lib" / filename,
+        Path("/home/ac.mkuscuog/git/bvbrc_ha_subtype_conversion/lib") / filename,
     ]
     for path in candidates:
-        if os.path.exists(path):
+        if path.exists():
             return path
     return candidates[-1]
 
@@ -49,10 +50,9 @@ def get_authorized_session():
         session.headers.update({'Authorization': os.environ['KB_AUTH_TOKEN']})
         return session
     print("Reading auth key from file")
-    token_file = os.path.join(os.environ.get('HOME', ''), ".patric_token")
-    if os.path.exists(token_file):
-        with open(token_file) as token_fh:
-            session.headers.update({'Authorization': token_fh.read().rstrip()})
+    token_file = Path(os.environ.get('HOME', '')) / ".patric_token"
+    if token_file.exists():
+        session.headers.update({'Authorization': token_file.read_text().rstrip()})
         return session
     return None
 
@@ -68,20 +68,19 @@ def fetch_feature_fasta(session, select_api):
 
 
 def create_fasta_file(output_dir, job_data):
-    input_file = os.path.join(output_dir, "input.fasta")
+    input_file = output_dir / "input.fasta"
     source = job_data["input_source"]
 
     if source == "fasta_file":
         try:
-            fetch_fasta_cmd = ["p3-cp", f"ws:{job_data['input_fasta_file']}", input_file]
+            fetch_fasta_cmd = ["p3-cp", f"ws:{job_data['input_fasta_file']}", str(input_file)]
             subprocess.check_call(fetch_fasta_cmd, shell=False)
         except Exception as e:
             print(f"Error copying fasta file from workspace:\n {e}")
             sys.exit(1)
     elif source == "fasta_data":
         try:
-            with open(input_file, "w+") as f:
-                f.write(job_data["input_fasta_data"])
+            input_file.write_text(job_data["input_fasta_data"])
         except Exception as e:
             print(f"Error copying fasta data to input file:\n {e}")
             sys.exit(1)
@@ -98,9 +97,7 @@ def create_fasta_file(output_dir, job_data):
             else:
                 select_api = API_GENOME_FEATURE_SELECT_LIST % (','.join(job_data["input_feature_list"]))
 
-            fasta_text = fetch_feature_fasta(session, select_api)
-            with open(input_file, "w+") as f:
-                f.write(fasta_text)
+            input_file.write_text(fetch_feature_fasta(session, select_api))
         except Exception as e:
             print(f"Error retrieving data from feature group:\n {e}")
             sys.exit(1)
@@ -232,8 +229,8 @@ def main():
     print(job_data)
 
     # Setup output directory
-    output_dir = os.path.abspath(args.output)
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir = Path(args.output).resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
     os.chdir(output_dir)
 
     selected_types = job_data["types"]
@@ -241,12 +238,12 @@ def main():
     # Create input file
     input_file = create_fasta_file(output_dir, job_data)
 
-    if os.path.getsize(input_file) == 0:
+    if input_file.stat().st_size == 0:
         print("Input fasta file is empty")
         sys.exit(1)
 
     # Parse fasta file and create query fasta for blast
-    blast_input_file = os.path.join(output_dir, "blast.fasta")
+    blast_input_file = output_dir / "blast.fasta"
     sequences = {}
     with open(blast_input_file, "w") as blast_data:
         with open(input_file) as fasta_data:
@@ -265,20 +262,20 @@ def main():
             subtype = values["header"].split("|")[2].split()[0]
             reference_sequences[subtype] = values["data"]
 
-    blast_output_file = os.path.join(output_dir, "blast.out")
+    blast_output_file = output_dir / "blast.out"
     # Run BLAST
     try:
-        blast_cmd = ["blastall", "-d", REFERENCE_SEQUENCE, "-i", blast_input_file, "-p", "blastp", "-G", "10", "-E",
-                     "1", "-m", "7", "-o", blast_output_file]
+        blast_cmd = ["blastall", "-d", str(REFERENCE_SEQUENCE), "-i", str(blast_input_file), "-p", "blastp",
+                     "-G", "10", "-E", "1", "-m", "7", "-o", str(blast_output_file)]
         subprocess.check_call(blast_cmd, shell=False)
     except Exception as e:
         print(f"Error running blast for {input_file}: {e}")
         sys.exit(1)
 
     # Parse blast result and create sequence annotation file
-    qresults = SearchIO.parse(blast_output_file, "blast-xml")
+    qresults = SearchIO.parse(str(blast_output_file), "blast-xml")
 
-    sequence_annotation_file_path = os.path.join(output_dir, BLAST_SEQ_ANNOTATION_NAME)
+    sequence_annotation_file_path = output_dir / BLAST_SEQ_ANNOTATION_NAME
     with open(sequence_annotation_file_path, "w") as sequence_annotation_file:
         sequence_annotation_writer = csv.DictWriter(sequence_annotation_file, delimiter="\t",
                                                     fieldnames=BLAST_SEQ_ANNOTATION_FILE_HEADER)
@@ -342,8 +339,8 @@ def main():
         # Replace '-' with '' in the unaligned reference sequence
         reference_sequence = reference_sequence.replace("-", "")
 
-        muscle_input_file = os.path.join(output_dir, query_name + ".muscle.in")
-        muscle_output_file = os.path.join(output_dir, query_name + ".muscle.out")
+        muscle_input_file = output_dir / f"{query_name}.muscle.in"
+        muscle_output_file = output_dir / f"{query_name}.muscle.out"
 
         with open(muscle_input_file, "w") as muscle_data:
             muscle_data.write(f">{query_name}\n")
@@ -354,7 +351,7 @@ def main():
 
         # Run muscle
         try:
-            muscle_cmd = ["muscle", "-in", muscle_input_file, "-out", muscle_output_file, "-quiet"]
+            muscle_cmd = ["muscle", "-in", str(muscle_input_file), "-out", str(muscle_output_file), "-quiet"]
             subprocess.check_call(muscle_cmd, shell=False)
         except Exception as e:
             print(f"Error running muscle for {muscle_input_file}: {e}")
@@ -369,7 +366,7 @@ def main():
         selected_subtypes = [t for t in selected_types if t != blast_subtype]
 
         # Final result file
-        result_file = os.path.join(output_dir, query_name + "_result.fasta")
+        result_file = output_dir / f"{query_name}_result.fasta"
         with open(result_file, "w") as result_file_writer:
             # Write query and best hit sequences to the final result file
             muscle_output_sequence = muscle_sequence[query_name].strip()
