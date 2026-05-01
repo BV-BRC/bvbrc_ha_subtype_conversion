@@ -398,6 +398,7 @@ def main():
 
                 # Create aligned reference sequence with insertions for each subtype
                 for subtype in selected_subtypes:
+                    subtype = subtype.split()[0]
                     subtype_ref_sequence = reference_sequences[subtype]
                     aligned_ref_seq_with_insertions = []
 
